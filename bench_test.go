@@ -84,6 +84,18 @@ func BenchmarkDecode(b *testing.B) {
 	gobUntyped := make([]byte, len(tmp))
 	copy(gobUntyped, tmp)
 
+	buf.Reset()
+	enc = gob.NewEncoder(buf)
+	var p obj
+	p = o
+	p.KV = nil
+	err = enc.Encode(p)
+	if err != nil {
+		panic(err)
+	}
+	gobTyped2 := make([]byte, len(tmp))
+	copy(gobTyped2, tmp)
+
 	b.Run("WithTypes", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -108,6 +120,24 @@ func BenchmarkDecode(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			buf.Reset(gobUntyped)
+			err := enc.Decode(&j)
+			if err != nil {
+				panic(err)
+			}
+		}
+	})
+	b.Run("WithReuse", func(b *testing.B) {
+		buf := bytes.NewReader(gobTyped)
+		var j obj
+		enc := gob.NewDecoder(buf)
+		err := enc.Decode(&j)
+		if err != nil {
+			panic(err)
+		}
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			buf.Reset(gobTyped2)
 			err := enc.Decode(&j)
 			if err != nil {
 				panic(err)
