@@ -6,11 +6,20 @@ import (
 	"testing"
 )
 
+type subobj struct {
+	Foo int
+	Bar int64
+	Baz struct {
+		Zab string
+	}
+}
+
 type obj struct {
 	Str   string
 	KV    map[string]interface{}
 	List  []string
 	FList []float64
+	Sub   *subobj
 }
 
 var o = obj{
@@ -22,6 +31,7 @@ var o = obj{
 	},
 	List:  []string{"a", "bb", "ccc"},
 	FList: []float64{1.1, 2.2, 3.3, 4.4, 5.5},
+	Sub:   &subobj{},
 }
 
 func BenchmarkEncode(b *testing.B) {
