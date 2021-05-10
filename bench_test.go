@@ -3,15 +3,45 @@ package main
 import (
 	"bytes"
 	"encoding/gob"
+	"strconv"
 	"testing"
 )
+
+type reasonString string
+
+type numberInterface interface {
+	number() int
+}
+
+type numberImpl1 struct {
+	N int
+}
+
+func (n *numberImpl1) number() int {
+	return n.N
+}
+
+type numberImpl2 struct {
+	N string
+}
+
+func (n *numberImpl2) number() int {
+	o, _ := strconv.Atoi(n.N)
+	return o
+}
+
+func init() {
+	gob.Register(&numberImpl1{})
+	gob.Register(&numberImpl2{})
+}
 
 type subobj struct {
 	Foo int
 	Bar int64
 	Baz struct {
-		Zab string
+		Zab reasonString
 	}
+	Num numberInterface
 }
 
 type obj struct {
@@ -31,7 +61,9 @@ var o = obj{
 	},
 	List:  []string{"a", "bb", "ccc"},
 	FList: []float64{1.1, 2.2, 3.3, 4.4, 5.5},
-	Sub:   &subobj{},
+	Sub: &subobj{
+		Num: &numberImpl1{10},
+	},
 }
 
 func BenchmarkEncode(b *testing.B) {
@@ -86,9 +118,9 @@ func BenchmarkDecode(b *testing.B) {
 
 	buf.Reset()
 	enc = gob.NewEncoder(buf)
-	var p obj
-	p = o
+	p := o
 	p.KV = nil
+	p.Sub.Num = &numberImpl2{"12"}
 	err = enc.Encode(p)
 	if err != nil {
 		panic(err)
